@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas AI Agent Terminal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #e1e1e0;
+            color: #111b21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        /* Fluid Container Sizing */
+        .chat-container {
+            width: clamp(320px, 95vw, 750px);
+            height: clamp(550px, 88vh, 900px);
+            background-color: #efeae2;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #d1d7db;
+            transition: all 0.3s ease;
+        }
+
+        /* Header Layout & Client Selector */
+        .chat-header {
+            padding: 14px 20px;
+            background-color: #f0f2f5;
+            border-bottom: 1px solid #d1d7db;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chat-header h2 {
+            font-size: 1.1rem;
+            color: #111b21;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .client-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .client-selector label {
+            font-size: 0.85rem;
+            color: #667781;
+            font-weight: 500;
+        }
+
+        .client-selector select {
+            background-color: #ffffff;
+            color: #008069;
+            border: 1px solid #d1d7db;
+            padding: 6px 12px;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .client-selector select:focus {
+            border-color: #00a884;
+            box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.2);
+        }
+
+        /* Modern Pill Buttons */
+        .btn-add-client {
+            background-color: #00a884;
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 168, 132, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add-client:hover {
+            background-color: #008069;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 128, 105, 0.3);
+        }
+
+        .btn-add-client:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 128, 105, 0.2);
+        }
+
+        /* Quick Action Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            background-color: #f7f8fa;
+            border-bottom: 1px solid #d1d7db;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d7db transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .toolbar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .toolbar::-webkit-scrollbar-thumb {
+            background-color: #d1d7db;
+            border-radius: 4px;
+        }
+
+        .toolbar button {
+            background-color: #ffffff;
+            color: #008069;
+            border: 1px solid #d1d7db;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toolbar button:hover {
+            background-color: #00a884;
+            color: #ffffff;
+            border-color: #00a884;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 168, 132, 0.2);
+        }
+
+        .toolbar button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Chat Area */
+        .chat-box {
+            flex: 1;
+            padding: 16px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: #efeae2;
+            background-image: radial-gradient(#e2dbd0 1px, transparent 0);
+            background-size: 16px 16px;
+            scroll-behavior: smooth;
+        }
+
+        /* Chat Bubbles */
+        .message {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(11, 20, 26, 0.1);
+            position: relative;
+            animation: fadeIn 0.15s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: #d9fdd3;
+            color: #111b21;
+            border-top-right-radius: 2px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: #ffffff;
+            color: #111b21;
+            border-top-left-radius: 2px;
+        }
+
+        .message img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #e9edef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            display: block;
+        }
+
+        /* CSS Loading Spinner */
+        .loading-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #d1d7db;
+            border-top: 2px solid #00a884;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Floating Input Bar Styling */
+        .input-container {
+            padding: 12px 16px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #d1d7db;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        /* Multi-line Textarea Styling */
+        .input-container textarea {
+            flex: 1;
+            padding: 10px 16px;
+            background-color: #ffffff;
+            border: 1px solid #d1d7db;
+            border-radius: 20px;
+            color: #111b21;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+            resize: none;
+            height: 42px;
+            max-height: 140px;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+
+        .input-container textarea:focus {
+            border-color: #00a884;
+            box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
+        }
+
+        .input-container textarea::placeholder {
+            color: #667781;
+        }
+
+        .input-container button {
+            background-color: #00a884;
+            border: none;
+            color: #ffffff;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 168, 132, 0.3);
+        }
+
+        .input-container button:hover {
+            background-color: #008069;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 128, 105, 0.4);
+        }
+
+        .input-container button:active {
+            transform: scale(0.95);
+        }
+
+        .input-container button svg {
+            width: 20px;
+            height: 20px;
+            fill: #ffffff;
+            margin-left: 2px;
+        }
+
+        /* Mobile Breakpoint */
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+            }
+
+            .chat-container {
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+            }
+
+            .chat-header {
+                padding: 10px 14px;
+            }
+
+            .chat-header h2 {
+                font-size: 1rem;
+            }
+
+            .client-selector {
+                gap: 6px;
+            }
+
+            .client-selector select {
+                padding: 5px 8px;
+                font-size: 0.8rem;
+            }
+
+            .btn-add-client {
+                padding: 5px 10px;
+                font-size: 0.78rem;
+            }
+
+            .toolbar {
+                padding: 8px 12px;
+                gap: 6px;
+            }
+
+            .toolbar button {
+                padding: 6px 12px;
+                font-size: 0.78rem;
+            }
+
+            .chat-box {
+                padding: 12px 14px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 0.9rem;
+                padding: 9px 12px;
+            }
+
+            .input-container {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .input-container textarea {
+                padding: 9px 14px;
+                font-size: 0.9rem;
+            }
+
+            .input-container button {
+                width: 38px;
+                height: 38px;
+            }
+
+            .input-container button svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>🌐 Atlas AI</h2>
+            
+            <div class="client-selector">
+                <label for="clientSelect">Client:</label>
+                <select id="clientSelect" onchange="switchClient()">
+                    <!-- Options loaded dynamically -->
+                </select>
+                <button class="btn-add-client" onclick="promptCreateClient()">+ New</button>
+            </div>
+        </div>
+
+        <!-- Toolbar for direct SQLite queries -->
+        <div class="toolbar">
+            <button onclick="fetchTasks()">📋 View Tasks</button>
+            <button onclick="fetchEmployees()">👥 View Employees</button>
+            <button onclick="fetchDbOverview()">📊 Full DB State</button>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            <div class="message bot">Connected to SQLite database. Active client context: <b id="activeClientTag">fral</b>.</div>
+        </div>
+
+        <div class="input-container">
+            <textarea id="userInput" placeholder="Ask Atlas... (Ctrl+Enter to send)" rows="1" onkeydown="handleKeyPress(event)" oninput="autoResize(this)"></textarea>
+            <button id="sendBtn" onclick="sendCommand()" aria-label="Send Message">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "https://jot-dv1e.onrender.com";
+
+        // Helper function for HTML escaping to prevent XSS
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Auto-expand/shrink textarea dynamically based on content height
+        function autoResize(textarea) {
+            textarea.style.height = '42px';
+            textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+        }
+
+        // Load Client List on Initialization
+        window.addEventListener("DOMContentLoaded", () => {
+            loadClients();
+        });
+
+        async function loadClients(selectClient = null) {
+            try {
+                const res = await fetch(`${BASE_URL}/clients/list`);
+                const data = await res.json();
+                const select = document.getElementById("clientSelect");
+                select.innerHTML = "";
+
+                const clients = data.clients || ["fral", "Default Client"];
+                clients.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c;
+                    opt.textContent = c;
+                    select.appendChild(opt);
+                });
+
+                if (selectClient) {
+                    select.value = selectClient;
+                }
+                switchClient();
+            } catch (err) {
+                console.error("Failed to load client list:", err);
+            }
+        }
+
+        async function promptCreateClient() {
+            const name = prompt("Enter new client context name:");
+            if (!name || !name.trim()) return;
+
+            try {
+                const res = await fetch(`${BASE_URL}/clients/create`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ client_name: name.trim() })
+                });
+
+                if (res.ok) {
+                    appendMessage(`➕ Created new client context: '<b>${escapeHTML(name.trim())}</b>'`, "bot");
+                    await loadClients(name.trim());
+                }
+            } catch (err) {
+                appendMessage(`⚠️ Error creating client: ${escapeHTML(err.message)}`, "bot");
+            }
+        }
+
+        function getActiveClient() {
+            return document.getElementById("clientSelect").value || "Default Client";
+        }
+
+        function switchClient() {
+            const client = getActiveClient();
+            document.getElementById("activeClientTag").innerText = client;
+        }
+
+        function makeImgTag(b64String) {
+            return b64String ? `<br><img src="data:image/png;base64,${b64String}" alt="Visual Summary" onload="scrollToBottom()" />` : "";
+        }
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendCommand() {
+            const input = document.getElementById("userInput");
+            const text = input.value.trim();
+            const client = getActiveClient();
+
+            if (!text) return;
+
+            appendMessage(escapeHTML(text), "user");
+            input.value = "";
+            input.style.height = '42px'; // Reset input height
+            
+            // Appends text with spinner animation
+            const loadingDiv = appendMessage('<span class="loading-state"><span class="spinner"></span> Processing command...</span>', "bot");
+
+            try {
+                const response = await fetch(`${BASE_URL}/agent/command`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: text, client_name: client })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.actions_executed && data.actions_executed.length > 0) {
+                        let outHtml = "🎯 <b>Execution Summary:</b><br>";
+                        data.actions_executed.forEach(act => {
+                            if (act.action === "add_task") {
+                                outHtml += `✅ Added Task: "${escapeHTML(act.title)}" (${act.priority})<br>`;
+                            } else if (act.action === "register_employee") {
+                                outHtml += `👤 Registered Employee: ${escapeHTML(act.name)} (ID: ${act.employee_id})<br>`;
+                            } else if (act.action === "list_tasks") {
+                                outHtml += `📋 Listed Tasks for '${client}'${makeImgTag(act.image)}<br>`;
+                            } else if (act.action === "list_employees") {
+                                outHtml += `👥 Listed Employees for '${client}'${makeImgTag(act.image)}<br>`;
+                            } else if (act.action === "view_database") {
+                                outHtml += `📊 Fetched Full DB State${makeImgTag(act.images?.employees)}${makeImgTag(act.images?.tasks)}<br>`;
+                            } else if (act.action === "general_chat") {
+                                outHtml += `💬 ${escapeHTML(act.reply)}<br>`;
+                            } else {
+                                outHtml += `⚙️ Executed ${escapeHTML(act.action)}<br>`;
+                            }
+                        });
+                        loadingDiv.innerHTML = outHtml;
+                    } else {
+                        loadingDiv.innerHTML = `<pre>${escapeHTML(JSON.stringify(data, null, 2))}</pre>`;
+                    }
+                } else {
+                    loadingDiv.innerHTML = `Error: ${escapeHTML(data.detail || 'Command failed.')}`;
+                }
+            } catch (err) {
+                loadingDiv.innerHTML = `⚠️ Connection error: ${escapeHTML(err.message)}`;
+            }
+        }
+
+        async function fetchEmployees() {
+            const client = getActiveClient();
+            const loadingDiv = appendMessage(`<span class="loading-state"><span class="spinner"></span> Fetching employees for '${escapeHTML(client)}'...</span>`, "bot");
+            try {
+                const res = await fetch(`${BASE_URL}/employees/list?client_name=${encodeURIComponent(client)}`);
+                const data = await res.json();
+                
+                let html = "";
+                if (!data.employees || data.employees.length === 0) {
+                    html = `No employees registered under '${escapeHTML(client)}'.`;
+                } else {
+                    html = `👥 <b>Employee Directory (${escapeHTML(client)}):</b><br>`;
+                    data.employees.forEach(e => {
+                        const salary = e.salary ? Number(e.salary).toLocaleString() : '0';
+                        html += `• [ID: ${e.id}] ${escapeHTML(e.name)} - ${escapeHTML(e.role)} ($${salary}/mo)<br>`;
+                    });
+                }
+
+                html += makeImgTag(data.image);
+                loadingDiv.innerHTML = html;
+            } catch (err) {
+                loadingDiv.innerHTML = `⚠️ Error fetching employees: ${escapeHTML(err.message)}`;
+            }
+        }
+
+        async function fetchTasks() {
+            const client = getActiveClient();
+            const loadingDiv = appendMessage(`<span class="loading-state"><span class="spinner"></span> Fetching tasks for '${escapeHTML(client)}'...</span>`, "bot");
+            try {
+                const res = await fetch(`${BASE_URL}/tasks/list?client_name=${encodeURIComponent(client)}`);
+                const data = await res.json();
+                
+                let html = "";
+                if (!data.tasks || data.tasks.length === 0) {
+                    html = `No active tasks found for '${escapeHTML(client)}'.`;
+                } else {
+                    html = `📋 <b>Tasks for ${escapeHTML(client)}:</b><br>`;
+                    data.tasks.forEach(t => {
+                        html += `• [ID: ${t.id || 'N/A'}] (${t.priority}) ${escapeHTML(t.title)}<br>`;
+                    });
+                }
+
+                html += makeImgTag(data.image);
+                loadingDiv.innerHTML = html;
+            } catch (err) {
+                loadingDiv.innerHTML = `⚠️ Error fetching tasks: ${escapeHTML(err.message)}`;
+            }
+        }
+
+        async function fetchDbOverview() {
+            const client = getActiveClient();
+            const loadingDiv = appendMessage(`<span class="loading-state"><span class="spinner"></span> Fetching full DB overview for '${escapeHTML(client)}'...</span>`, "bot");
+            try {
+                const res = await fetch(`${BASE_URL}/database/state?client_name=${encodeURIComponent(client)}`);
+                const data = await res.json();
+                
+                let html = `📊 <b>Database State (${escapeHTML(client)}):</b><br><br>`;
+                
+                const emps = data.state?.employees || [];
+                html += `👥 <b>Registered Employees (${emps.length}):</b><br>`;
+                if (emps.length === 0) {
+                    html += `&nbsp;&nbsp;(None)<br>`;
+                } else {
+                    emps.forEach(e => {
+                        html += `&nbsp;&nbsp;• [ID: ${e.id}] ${escapeHTML(e.name)} (${escapeHTML(e.role)}) - $${Number(e.salary || 0).toLocaleString()}/mo<br>`;
+                    });
+                }
+
+                const tasks = data.state?.tasks || [];
+                html += `<br>📋 <b>Pending Tasks (${tasks.length}):</b><br>`;
+                if (tasks.length === 0) {
+                    html += `&nbsp;&nbsp;(None)<br>`;
+                } else {
+                    tasks.forEach(t => {
+                        html += `&nbsp;&nbsp;• [ID: ${t.id || 'N/A'}] (${t.priority}) ${escapeHTML(t.title)}<br>`;
+                    });
+                }
+
+                if (data.images) {
+                    html += makeImgTag(data.images.employees);
+                    html += makeImgTag(data.images.tasks);
+                }
+
+                loadingDiv.innerHTML = html;
+            } catch (err) {
+                loadingDiv.innerHTML = `⚠️ Error fetching DB state: ${escapeHTML(err.message)}`;
+            }
+        }
+
+        function appendMessage(content, sender) {
+            const chatBox = document.getElementById("chatBox");
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message", sender);
+            msgDiv.innerHTML = content;
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+            return msgDiv;
+        }
+
+        function handleKeyPress(e) {
+            // Send on Ctrl+Enter or Cmd+Enter
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                sendCommand();
+            }
+            // Standard Enter inserts a newline natively
+        }
+    </script>
+</body>
+</html>
